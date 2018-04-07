@@ -1,13 +1,37 @@
-// Exemple adapté de la mise en route d'Express : 
-// http://expressjs.com/fr/starter/hello-world.html
-var express = require('express');
+
+// shortened all path no .html
+var express = require('express'), url = require('url');
+
 var app = express();
-
-// '/' est la route racine
-app.get('/', function (req, res) {
-  res.send('Bonjour !');
+app.use(function(req, res, next) {
+    console.log('%s %s', req.method, req.url);
+    next();
+});
+app.configure(function() {
+    var pub_dir = __dirname + '/public';
+    app.set('port', process.env.PORT || 8080);
+    app.engine('.html', require('ejs').__express);
+    app.set('views', __dirname + '/views');
+    app.set('view engine', 'html');
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(express.cookieParser());
+    app.use(express.static(pub_dir));
+    app.use(app.router);
+});
+app.get('/*', function(req, res) {
+    if (req.xhr) {
+        var pathname = url.parse(req.url).pathname;
+        res.sendfile('index.html', {root: __dirname + '/public' + pathname});
+    } else {
+        res.render('index');
+    }
 });
 
-app.listen(4000, function () {
-  console.log("Application d'exemple écoutant sur le port 4000 !");
-});
+app.listen(app.get('port'));
+
+// '/static everything inside public
+app.use('/static', express.static(__dirname + '/public'));
+
+// link MongoDB to Node app
+
